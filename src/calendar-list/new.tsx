@@ -3,9 +3,10 @@ import React, {useCallback, useEffect, useRef, useState, useMemo} from 'react';
 import {View, ScrollViewProps, ScrollView} from 'react-native';
 import constants from '../commons/constants';
 import {toMarkingFormat} from '../interface';
-import {extractComponentProps} from '../componentUpdater';
+//@ts-expect-error
+import {STATIC_HEADER} from '../testIDs';
 import Calendar, {CalendarProps} from '../calendar';
-import CalendarHeader from '../calendar/header';
+import CalendarHeader, {CalendarHeaderProps} from '../calendar/header';
 import InfiniteList from '../infinite-list';
 import styleConstructor from './style';
 
@@ -22,6 +23,8 @@ export interface CalendarListProps {
   scrollViewProps?: ScrollViewProps;
   /** Props to pass the list items */
   calendarProps?: CalendarProps;
+  /** Props to pass the calendars headers */
+  headerProps?: CalendarHeaderProps;
   /** Identifier for testing */
   testID?: string;
 }
@@ -37,18 +40,18 @@ const CalendarList = (props: CalendarListProps) => {
     staticHeader, 
     scrollViewProps,
     calendarProps,
+    headerProps,
     testID
   } = props;
   const style = useRef(styleConstructor(calendarProps?.theme));
   const list = useRef<ScrollView>();
   const [items, setItems] = useState(getDatesArray(initialDate, scrollRange));
-  const [positionIndex, setPositionIndex] = useState(scrollRange);
+  const [dataAppendIndex, setDataAppendIndex] = useState(scrollRange);
 
   /** Static Header */
 
   const [currentMonth, setCurrentMonth] = useState(initialDate || items[scrollRange]);
   const shouldRenderStaticHeader = staticHeader && horizontal;
-  const headerProps = extractComponentProps(CalendarHeader, props);
   const staticHeaderStyle = useMemo(() => {
     return [style.current.staticHeader, calendarProps?.headerStyle];
   }, [calendarProps?.headerStyle]);
@@ -117,9 +120,13 @@ const CalendarList = (props: CalendarListProps) => {
           onPressArrowRight={scrollToNextMonth}
           onPressArrowLeft={scrollToPreviousMonth}
           style={staticHeaderStyle}
+          theme={calendarProps?.theme}
+          firstDay={calendarProps?.firstDay}
+          showWeekNumbers={calendarProps?.showWeekNumbers}
+          displayLoadingIndicator={calendarProps?.displayLoadingIndicator}
           accessibilityElementsHidden // iOS
           importantForAccessibility={'no-hide-descendants'} // Android
-          testID={'static-header'}
+          testID={STATIC_HEADER}
         />
       );
     }
@@ -157,7 +164,7 @@ const CalendarList = (props: CalendarListProps) => {
         }
       }
 
-      setPositionIndex(shouldAppend ? index : scrollRange - 1);
+      setDataAppendIndex(shouldAppend ? index : scrollRange - 1);
       setItems(array);
     }
   };
@@ -208,7 +215,7 @@ const CalendarList = (props: CalendarListProps) => {
         isHorizontal={horizontal}
         style={style.current.container}
         initialPageIndex={scrollRange}
-        positionIndex={positionIndex}
+        dataAppendIndex={dataAppendIndex}
         pageHeight={CALENDAR_HEIGHT}
         pageWidth={constants.screenWidth}
         onPageChange={onPageChange}
